@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<robot name="minimal_axle" xmlns:xacro="http://ros.org/wiki/xacro">
+  
+  <xacro:property name="wheel_joint_damping" value="0.2" />
+  <xacro:property name="wheel_joint_friction" value="0.7" />
+
+  <xacro:property name="axle_length" value="0.52" />
+  <xacro:property name="axle_effort_limit" value="20.1851"/>
+  <xacro:property name="axle_velocity_limit" value="12.85"/>
+  
+  <xacro:property name="tire_radius" value="0.13"/>
+  <xacro:property name="tire_width" value="0.085"/>
+  <xacro:property name="degree_10" value="0.17"/>
+
+  <!-- null inertial element. This is needed to make the model work with gazebo  -->
+  <xacro:macro name="null_inertial">
+    <inertial>
+      <mass value="0.001"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="wheel" params="lr_prefix fr_prefix lr_reflect">
+
+    <link name="${lr_prefix}_${fr_prefix}_axle_carrier">
+      <xacro:null_inertial />
+    </link>
+
+    <joint name="${lr_prefix}_${fr_prefix}_axle" type="continuous">
+      <parent link="${lr_prefix}_${fr_prefix}_axle_carrier"/>
+      <child link="${lr_prefix}_${fr_prefix}_wheel"/>
+      <origin xyz="0 0 0" rpy="0 ${M_PI/2} 0"/>
+      <axis xyz="0 0 1"/>
+      <limit effort="${axle_effort_limit}" velocity="${axle_velocity_limit}"/>
+      <joint_properties damping="${wheel_joint_damping}" friction="${wheel_joint_friction}"/>
+    </joint>
+
+    <transmission name="${lr_prefix}_${fr_prefix}_axle_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${lr_prefix}_${fr_prefix}_axle">
+        <!-- hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface -->
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${lr_prefix}_${fr_prefix}_axle_act">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission> 
+    
+    <link name="${lr_prefix}_${fr_prefix}_wheel">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 ${M_PI/2} 0"/>
+        <geometry>
+          <mesh filename="package://minimal/meshes/wheel.dae" scale="1.00 1.00 1.00"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0
+                     0
+                     0" />
+        <geometry>
+          <cylinder length="${tire_width}" radius="${tire_radius}"/>
+        </geometry>
+      </collision>
+
+
+      <inertial>
+        <mass value="3.0"/> <!-- unit: kg -->
+        <origin xyz="0.0 0.0 0.0" rpy="0 ${M_PI/2} 0"/>
+        <inertia ixx="2.046366e-05" ixy="0.0" ixz="0.0" iyy="2.046366e-05" iyz="0.0" izz="3.586065e-05"/>
+      </inertial>
+    </link>
+
+      <friction>
+        <ode>
+          <mu>1.0</mu>
+          <mu2>1.0</mu2>
+          <kp value="10000000.0" />
+          <kd value="1.0"/>
+          <fdir1>1 0 0 </fdir1>
+          <minDepth>0.0</minDepth>
+        </ode>
+      </friction>
+     <gazebo reference="${lr_prefix}_${fr_prefix}_wheel">
+      <material>Gazebo/Black</material>
+     </gazebo>
+  </xacro:macro>
+
+  <!-- Front wheel -->
+  <xacro:macro name="front_wheel"
+               params="lr_prefix fr_prefix lr_reflect fr_reflect">
+    <link name="${lr_prefix}_steering_link">
+      <xacro:null_inertial/>
+    </link>
+
+    <joint name="${lr_prefix}_${fr_prefix}_to_chassis" type="fixed">
+      <parent link="chassis"/>
+      <child link="${lr_prefix}_steering_link"/>
+      <origin xyz="${lr_reflect * ((axle_length / 2) - axle_length)}
+                   ${fr_reflect * 0.40}
+                   0.0 "/>
+      <axis xyz="0 0 1"/>
+    </joint>
+    
+    <joint name="${lr_prefix}_steering_joint" type="revolute">
+      <parent link="${lr_prefix}_steering_link"/>
+      <child link="${lr_prefix}_${fr_prefix}_axle_carrier"/>
+      <origin xyz="0
+                   0
+                   0 "/>
+      <axis xyz="0 0 1"/>
+      <limit lower="${-degree_10}" upper="${degree_10}"
+             effort="50" velocity="25"/>
+    </joint>
+    <transmission name="${lr_prefix}_steering_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${lr_prefix}_steering_joint">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${lr_prefix}_steering_act">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission> 
+    <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="${fr_prefix}"
+                 lr_reflect="${lr_reflect}"/>
+  </xacro:macro>
+  <!-- rear wheel -->
+  <xacro:macro name="rear_wheel"
+               params="lr_prefix fr_prefix lr_reflect fr_reflect">
+    
+    <joint name="${lr_prefix}_${fr_prefix}_to_chassis" type="continuous">
+      <parent link="chassis"/>
+      <child link="${lr_prefix}_${fr_prefix}_axle_carrier"/>
+      <origin xyz="${lr_reflect * ((axle_length / 2) - axle_length)}
+                   ${fr_reflect * 0.54}
+                   0.0"
+              rpy="0
+                   0
+                   0"/>
+      <axis xyz="1 0 0"/>
+    </joint>
+  
+  <xacro:wheel lr_prefix="${lr_prefix}" fr_prefix="${fr_prefix}"
+               lr_reflect="${lr_reflect}"/>
+  </xacro:macro>
+</robot>
+
+<!--  LocalWords:  SimpleTransmission EffortJointInterface lr revolute
+-->

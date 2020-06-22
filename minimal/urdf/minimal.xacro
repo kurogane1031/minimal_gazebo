@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<robot name="minimal" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="M_PI" value="3.1415926535897931"/>
+  <xacro:property name="wheel_radius" value="0.13"/>
+  <xacro:property name="wheel_length" value="0.085"/>
+  <xacro:property name="wheel_side_pos" value="0.26"/>
+  <xacro:property name="wheel_front_pos" value="0.40"/>
+  <xacro:property name="wheel_rear_pos" value="-0.51"/>
+
+  <xacro:include filename="$(find minimal)/urdf/axle.urdf.xacro"/>
+
+  <link name="base_link">
+  </link>
+  <joint name="base_link_to_chassis" type="fixed">
+    <parent link="base_link"/>
+    <child link="chassis"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <link name="chassis">
+    <!-- <xacro:null_inertial/> -->
+    <inertial>
+      <mass value="88.0"/> <!-- unit: kg -->
+      <origin xyz="0.000000 -0.069829 0.324532" rpy="0 0 0"/>
+      <inertia ixx="0.040721" ixy="0" ixz="0" iyy="0.016682" iyz="-0.002478" izz="0.038922"/>
+    </inertial>
+  </link> <!-- end chassis -->
+  
+  <xacro:front_wheel lr_prefix="left" fr_prefix="front"
+                     lr_reflect="1" fr_reflect="1"/>
+  <xacro:front_wheel lr_prefix="right" fr_prefix="front"
+                     lr_reflect="-1" fr_reflect="1"/>
+  <xacro:rear_wheel lr_prefix="left" fr_prefix="rear"
+                    lr_reflect="1" fr_reflect="-1"/>
+  <xacro:rear_wheel lr_prefix="right" fr_prefix="rear"
+                    lr_reflect="-1" fr_reflect="-1"/>
+
+
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/minimal</robotNamespace>
+      <robotParam>robot_description</robotParam>
+      <controlPeriod>0.001</controlPeriod>
+    </plugin>
+  </gazebo> <!-- end plugin gazebo_ros_control -->
+</robot>
